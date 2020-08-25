@@ -180,8 +180,40 @@ $.extend( RowGroup.prototype, {
 	 */
 	_adjustColspan: function ()
 	{
-		$( 'tr.'+this.c.className, this.s.dt.table().body() ).find('td:visible')
-			.attr( 'colspan', this._colspan() );
+	    var dt = this.s.dt;
+	    var columns = dt.columns()[0].map(function (columnIndex) {
+		var column = dt.column(columnIndex);
+		return column.visible() && $(column.header()).css('display') != 'none';
+	    });
+	    $('tr.' + this.c.className, this.s.dt.table().body()).each(function () {
+		var column_it = 0;
+		var td_it = 0;
+		$(this).find('td').each(function () {
+		    if (!$(this).attr('_colspan'))
+			$(this).attr('_colspan', $(this).attr('colspan'));
+		    var colspan = parseInt($(this).attr('_colspan') || 1);
+		    $(this).attr('hidden', false);
+		    if (td_it < columns.length) {
+			if (colspan > 1) {
+			    for (var colspan_ = colspan; column_it < td_it + colspan && column_it < columns.length; column_it++) {
+				if (!columns[column_it]) {
+				    --colspan_;
+				}
+			    };
+			    $(this).attr('colspan', colspan_);
+			}
+			else {
+			    if (!columns[column_it])
+				$(this).attr('hidden', true);
+			    ++column_it;
+			}
+		    }
+		    else {
+			$(this).attr('hidden', true);
+		    }
+		    td_it += colspan;
+		});
+	    });
 	},
 
 	/**
